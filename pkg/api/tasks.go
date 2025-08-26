@@ -28,17 +28,16 @@ func tasksHandler(w http.ResponseWriter, r *http.Request) {
 		tasks, err = db.Tasks(50) // получаем максимум 50 ближайших задач
 	} else {
 		// Проверяем, может ли search быть датой в формате 02.01.2006
-		if t, errDate := time.Parse("02.01.2006", search); errDate == nil {
-			date := t.Format("20060102")
-			tasks, err = db.TasksByDate(date, 50)
+		if t, errDate := time.Parse(DateInput, search); errDate == nil {
+			date := t.Format(DateLayout)
+			tasks, err = db.TasksByDate(date, DefaultLimit)
 		} else {
-			tasks, err = db.TasksBySearch(search, 50)
+			tasks, err = db.TasksBySearch(search, DefaultLimit)
 		}
 	}
 
 	if err != nil {
-		writeJSON(w, map[string]string{"error": err.Error()})
-		return
+		writeJSON(w, map[string]string{"error": err.Error()}, http.StatusInternalServerError) // добавлен код ответа
 	}
 
 	// Если срез nil, создаём пустой
@@ -58,5 +57,5 @@ func tasksHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	writeJSON(w, map[string]any{"tasks": respTasks}) // ✅ REPLACED ORIGINAL WRITEJSON
+	writeJSON(w, map[string]any{"tasks": respTasks}, http.StatusOK) // добавлен код ответа
 }

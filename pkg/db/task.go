@@ -123,6 +123,12 @@ func Tasks(limit int) ([]*Task, error) {
 		}
 		tasks = append(tasks, &t)
 	}
+
+	// обработка ошибок после rows.Next()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return tasks, nil
 }
 
@@ -147,6 +153,12 @@ func TasksByDate(date string, limit int) ([]*Task, error) {
 		}
 		tasks = append(tasks, &t)
 	}
+
+	// обработка ошибок после rows.Next()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return tasks, nil
 }
 
@@ -172,5 +184,11 @@ func TasksBySearch(search string, limit int) ([]*Task, error) {
 		}
 		tasks = append(tasks, &t)
 	}
+
+	// обработка ошибок после rows.Next()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return tasks, nil
 }

@@ -8,11 +8,14 @@ import (
 
 // Init подключает все обработчики API
 func Init() {
-	http.HandleFunc("/api/nextdate", nextDateHandler)
-	http.HandleFunc("/api/task", taskHandler)
-	http.HandleFunc("/api/tasks", tasksHandler)
-	http.HandleFunc("/api/task/done", doneHandler) // отметка вып
+	// публичные эндпоинты
 	http.HandleFunc("/api/signin", signinHandler)
+	http.HandleFunc("/api/nextdate", nextDateHandler)
+
+	// защищённые эндпоинты через auth middleware
+	http.HandleFunc("/api/tasks", auth(tasksHandler))
+	http.HandleFunc("/api/task", auth(taskHandler))
+	http.HandleFunc("/api/task/done", auth(doneHandler))
 
 }
 

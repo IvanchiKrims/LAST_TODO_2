@@ -55,3 +55,11 @@ func Init(dbFile string) error {
 
 	return nil
 }
+
+// Close закрывает соединение с базой данных
+func Close() error {
+	if DB != nil {
+		return DB.Close()
+	}
+	return nil
+}

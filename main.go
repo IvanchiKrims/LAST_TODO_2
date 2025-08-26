@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"LAST_TODO_2/pkg/api" //добавил импорт для InitAuth
 	"LAST_TODO_2/pkg/db"
 	"LAST_TODO_2/pkg/server"
 )
@@ -25,6 +26,10 @@ func main() {
 	if err := db.Init(dbFile); err != nil {
 		log.Fatalf("failed to init db: %v", err)
 	}
+
+	defer db.Close() // закрываем базу при выходе
+
+	api.InitAuth() //инициализация авторизации на старте
 
 	// создаём и запускаем сервер
 	s := server.New(port, "./web")

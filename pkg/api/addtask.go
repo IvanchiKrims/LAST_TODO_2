@@ -13,30 +13,30 @@ import (
 func addTaskHandler(w http.ResponseWriter, r *http.Request) {
 	var task db.Task
 	if err := json.NewDecoder(r.Body).Decode(&task); err != nil {
-		writeJSON(w, map[string]any{"error": err.Error()})
+		writeJSON(w, map[string]any{"error": err.Error()}, http.StatusBadRequest) //  Обработка кода ответа
 		return
 	}
 
 	// Проверка обязательного заголовка
 	if task.Title == "" {
-		writeJSON(w, map[string]any{"error": "Не указан заголовок задачи"})
+		writeJSON(w, map[string]any{"error": "Не указан заголовок задачи"}, http.StatusBadRequest) //  обработка кода ответа
 		return
 	}
 
 	// Проверка и корректировка даты
 	if err := checkDate(&task); err != nil {
-		writeJSON(w, map[string]any{"error": err.Error()})
+		writeJSON(w, map[string]any{"error": err.Error()}, http.StatusBadRequest) //  обработка кода ответа
 		return
 	}
 
 	// Добавляем в БД
 	id, err := db.AddTask(&task)
 	if err != nil {
-		writeJSON(w, map[string]any{"error": err.Error()})
+		writeJSON(w, map[string]any{"error": err.Error()}, http.StatusInternalServerError) // обработка кода ответа
 		return
 	}
 
-	writeJSON(w, map[string]any{"id": fmt.Sprint(id)})
+	writeJSON(w, map[string]any{"id": fmt.Sprint(id)}, http.StatusOK) //  обработка кода ответа
 }
 
 // checkDate проверяет и корректирует дату задачи
@@ -45,11 +45,11 @@ func checkDate(task *db.Task) error {
 
 	// Если дата не указана — ставим сегодня
 	if task.Date == "" {
-		task.Date = now.Format("20060102")
+		task.Date = now.Format(DateLayout)
 	}
 
 	// Проверяем формат даты
-	t, err := time.Parse("20060102", task.Date)
+	t, err := time.Parse(DateLayout, task.Date)
 	if err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func checkDate(task *db.Task) error {
 	// Если дата уже прошла
 	if t.Before(truncateToDay(now)) {
 		if task.Repeat == "" {
-			task.Date = now.Format("20060102")
+			task.Date = now.Format(DateLayout)
 		} else {
 			next, err := NextDate(now, task.Date, task.Repeat)
 			if err != nil {
@@ -79,12 +79,15 @@ func checkDate(task *db.Task) error {
 
 // truncateToDay — обрезает время до даты
 func truncateToDay(t time.Time) time.Time {
-	res, _ := time.Parse("20060102", t.Format("20060102"))
+	res, _ := time.Parse(DateLayout, t.Format(DateLayout))
 	return res
 }
 
-// writeJSON — утилита для возврата JSON
-func writeJSON(w http.ResponseWriter, data any) {
+// writeJSON — утилита для возврата JSON с кодом ответа и обработкой ошибки кодирования
+func writeJSON(w http.ResponseWriter, data any, status int) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	json.NewEncoder(w).Encode(data)
+	w.WriteHeader(status)                                   //  установка кода ответа
+	if err := json.NewEncoder(w).Encode(data); err != nil { //  обработка ошибки JSON
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
